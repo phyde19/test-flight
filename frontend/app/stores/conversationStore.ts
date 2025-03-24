@@ -19,9 +19,11 @@ interface ConversationState {
   isStreaming: boolean
   streamedResponse: string
   abortController: AbortController | null
+  targetMessageId: string | null // For message-specific regeneration
 
   // Message actions
   addMessage: (role: MessageRole, content: string) => void
+  insertMessageAfter: (targetId: string, role: MessageRole, content?: string) => void
   updateMessage: (id: string, updates: Partial<Omit<Message, 'id'>>) => void
   removeMessage: (id: string) => void
   reorderMessages: (sourceIndex: number, targetIndex: number) => void
@@ -39,6 +41,7 @@ interface ConversationState {
   
   // API interaction
   startStream: () => Promise<void>
+  regenerateMessage: (messageId: string) => Promise<void>
   stopStream: () => void
 }
 
@@ -50,11 +53,27 @@ export const useConversationStore = create<ConversationState>((set, get) => ({
   isStreaming: false,
   streamedResponse: '',
   abortController: null as AbortController | null,
+  targetMessageId: null,
 
   // Message actions
   addMessage: (role, content) => set(state => ({
     messages: [...state.messages, { id: nanoid(), role, content }]
   })),
+  
+  insertMessageAfter: (targetId, role, content = '') => set(state => {
+    // Find the index of the target message
+    const targetIndex = state.messages.findIndex(msg => msg.id === targetId)
+    if (targetIndex === -1) return state
+    
+    // Create a new array with the inserted message
+    const newMessages = [
+      ...state.messages.slice(0, targetIndex + 1),
+      { id: nanoid(), role, content },
+      ...state.messages.slice(targetIndex + 1)
+    ]
+    
+    return { messages: newMessages }
+  }),
 
   updateMessage: (id, updates) => set(state => ({
     messages: state.messages.map(msg => 
@@ -84,6 +103,7 @@ export const useConversationStore = create<ConversationState>((set, get) => ({
 
   // Export/Import
   exportState: () => {
+    // Only export the essential state, not streaming state
     const { messages, selectedAssistant, systemPrompt } = get()
     return JSON.stringify({
       messages,
@@ -144,13 +164,23 @@ export const useConversationStore = create<ConversationState>((set, get) => ({
       set({ messages: messagesToSend })
     }
     
+    // Create an assistant message to stream into
+    const assistantMessageId = nanoid()
+    set(state => ({
+      messages: [...state.messages, { id: assistantMessageId, role: 'assistant', content: '' }]
+    }))
+    
     // Create abort controller
     const abortController = new AbortController()
-    set({ isStreaming: true, streamedResponse: '', abortController })
+    set({ 
+      isStreaming: true, 
+      targetMessageId: assistantMessageId,
+      abortController 
+    })
     
     try {
       // Convert messages to the format expected by the API,
-      // ensuring we exactly match the backend schema
+      // ensuring we exactly match the backend schema (omitting our IDs)
       const apiMessages = messagesToSend.map(({ role, content }) => ({ 
         role, 
         content 
@@ -181,59 +211,125 @@ export const useConversationStore = create<ConversationState>((set, get) => ({
       }
       
       const reader = response.body.getReader()
+      let streamedContent = ''
       
       // eslint-disable-next-line no-constant-condition
       while (true) {
         const { done, value } = await reader.read()
         
         if (done) {
-          // Once streaming is complete, add or replace an assistant response message
-          const { streamedResponse, messages } = get()
-          if (streamedResponse.trim()) {
-            // Check if the last message is from the assistant
-            const lastMessageIndex = messages.length - 1
-            if (lastMessageIndex >= 0 && messages[lastMessageIndex].role === 'assistant') {
-              // Replace the last assistant message
-              get().updateMessage(messages[lastMessageIndex].id, { content: streamedResponse })
-            } else {
-              // Add a new assistant message
-              get().addMessage('assistant', streamedResponse)
-            }
-          }
           break
         }
         
         const text = new TextDecoder().decode(value)
-        set(state => ({ 
-          streamedResponse: state.streamedResponse + text 
-        }))
+        streamedContent += text
+        
+        // Update the assistant message with the content received so far
+        get().updateMessage(assistantMessageId, { content: streamedContent })
       }
     } catch (error) {
       // Only log errors that aren't from aborting
       if (error.name !== 'AbortError') {
         console.error('Error streaming response:', error)
         
-        // Display error to user by adding it to the streamedResponse
-        set(state => ({ 
-          streamedResponse: `Error connecting to API: ${error.message}\n\nMake sure the backend is running at ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}` 
-        }))
-        
-        // Wait 5 seconds then clear the error
-        setTimeout(() => {
-          set({ isStreaming: false, abortController: null })
-        }, 5000)
-        return
+        // Display error in the assistant message
+        get().updateMessage(assistantMessageId, { 
+          content: `Error connecting to API: ${error.message}\n\nMake sure the backend is running at ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}` 
+        })
       }
     } finally {
-      set({ isStreaming: false, abortController: null })
+      set({ isStreaming: false, targetMessageId: null, abortController: null })
     }
   },
 
+  regenerateMessage: async (messageId) => {
+    const { messages, selectedAssistant, systemPrompt } = get()
+    
+    // Find target message (must be assistant message)
+    const targetIndex = messages.findIndex(msg => msg.id === messageId)
+    if (targetIndex === -1 || messages[targetIndex].role !== 'assistant') return
+    
+    // Get all messages before the target to use as context
+    const contextMessages = messages.slice(0, targetIndex)
+    
+    // Set the target message content to empty during regeneration
+    get().updateMessage(messageId, { content: '' })
+    
+    // Create abort controller
+    const abortController = new AbortController()
+    set({ 
+      isStreaming: true, 
+      targetMessageId: messageId,
+      abortController 
+    })
+    
+    try {
+      // Convert messages to the format expected by the API
+      const apiMessages = contextMessages.map(({ role, content }) => ({ 
+        role, 
+        content 
+      }))
+      
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+      const response = await fetch(`${API_URL}/completion/stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          assistant: selectedAssistant,
+          system_prompt: systemPrompt || null,
+          conversation: apiMessages,
+        }),
+        signal: abortController.signal,
+      })
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`API error (${response.status}): ${errorText}`)
+      }
+      
+      if (!response.body) {
+        throw new Error('No response body')
+      }
+      
+      const reader = response.body.getReader()
+      let streamedContent = ''
+      
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { done, value } = await reader.read()
+        
+        if (done) {
+          break
+        }
+        
+        const text = new TextDecoder().decode(value)
+        streamedContent += text
+        
+        // Update the message with the content received so far
+        get().updateMessage(messageId, { content: streamedContent })
+      }
+    } catch (error) {
+      // Only log errors that aren't from aborting
+      if (error.name !== 'AbortError') {
+        console.error('Error streaming response:', error)
+        
+        // Display error in the assistant message
+        get().updateMessage(messageId, { 
+          content: `Error connecting to API: ${error.message}\n\nMake sure the backend is running at ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}` 
+        })
+      }
+    } finally {
+      set({ isStreaming: false, targetMessageId: null, abortController: null })
+    }
+  },
+  
   stopStream: () => {
     const { abortController } = get()
     if (abortController) {
       abortController.abort()
-      set({ isStreaming: false, abortController: null })
+      set({ isStreaming: false, targetMessageId: null, abortController: null })
     }
   }
 }))
