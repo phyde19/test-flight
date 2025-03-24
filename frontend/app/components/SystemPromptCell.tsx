@@ -76,7 +76,7 @@ export default function SystemPromptCell({
             )}
           </div>
           
-          <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center space-x-3 opacity-0 group-hover:opacity-100 transition-opacity">
             {isEditing ? (
               <>
                 <button
@@ -84,7 +84,7 @@ export default function SystemPromptCell({
                   className="text-xs text-green-600 hover:text-green-800"
                   title="Save changes"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M20 6 9 17l-5-5"/>
                   </svg>
                 </button>
@@ -93,7 +93,7 @@ export default function SystemPromptCell({
                   className="text-xs text-red-600 hover:text-red-800"
                   title="Cancel editing"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M18 6 6 18"/>
                     <path d="m6 6 12 12"/>
                   </svg>
@@ -105,7 +105,7 @@ export default function SystemPromptCell({
                 className="text-xs text-blue-600 hover:text-blue-800"
                 title="Edit system prompt"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
                   <path d="m15 5 4 4"/>
                 </svg>
