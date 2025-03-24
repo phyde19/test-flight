@@ -156,9 +156,19 @@ export const useConversationStore = create<ConversationState>((set, get) => ({
       lastUserMessageIndex--
     }
     
-    // We'll send all messages for API context, but we won't modify the existing messages
-    // This preserves any edited assistant messages in the UI
-    let messagesToSend = [...messages]
+    if (lastUserMessageIndex === -1) {
+      console.warn('No user message found in conversation')
+      return
+    }
+    
+    // Enforce idempotency: Remove any assistant messages after the last user message
+    // This ensures we can re-run the stream multiple times and get consistent results
+    let messagesToKeep = messages.slice(0, lastUserMessageIndex + 1)
+    
+    // Only update the UI state if we're actually removing messages
+    if (messagesToKeep.length < messages.length) {
+      set({ messages: messagesToKeep })
+    }
     
     // Create an assistant message to stream into
     const assistantMessageId = nanoid()
@@ -177,7 +187,8 @@ export const useConversationStore = create<ConversationState>((set, get) => ({
     try {
       // Convert messages to the format expected by the API,
       // ensuring we exactly match the backend schema (omitting our IDs)
-      const apiMessages = messagesToSend.map(({ role, content }) => ({ 
+      // Only send messages up to and including the last user message
+      const apiMessages = messagesToKeep.map(({ role, content }) => ({ 
         role, 
         content 
       }))

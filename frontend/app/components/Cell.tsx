@@ -29,8 +29,14 @@ export default function Cell({
   canMoveDown
 }: CellProps) {
   const [isEditing, setIsEditing] = useState(false)
-  const [content, setContent] = useState(message.content)
+  const [editDraft, setEditDraft] = useState("")
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  
+  // Initialize draft text when editing starts
+  const startEditing = () => {
+    setEditDraft(message.content)
+    setIsEditing(true)
+  }
 
   // Role-specific styling
   const roleStyles = {
@@ -60,7 +66,7 @@ export default function Cell({
       textareaRef.current.style.height = 'auto'
       textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px'
     }
-  }, [isEditing, content])
+  }, [isEditing, editDraft])
 
   // Focus textarea when editing starts
   useEffect(() => {
@@ -71,14 +77,15 @@ export default function Cell({
 
   // Handle save
   const handleSave = () => {
-    onUpdate(message.id, { content })
+    onUpdate(message.id, { content: editDraft })
     setIsEditing(false)
+    // No need to reset editDraft - we'll initialize it when editing starts
   }
 
   // Handle cancel
   const handleCancel = () => {
-    setContent(message.content)
     setIsEditing(false)
+    // No need to reset editDraft - we'll initialize it when editing starts
   }
 
   return (
@@ -167,7 +174,7 @@ export default function Cell({
             ) : (
               <>
                 <button
-                  onClick={() => setIsEditing(true)}
+                  onClick={startEditing}
                   className="text-xs text-blue-600 hover:text-blue-800"
                   title="Edit message"
                 >
@@ -196,8 +203,8 @@ export default function Cell({
         {isEditing ? (
           <textarea
             ref={textareaRef}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
+            value={editDraft}
+            onChange={(e) => setEditDraft(e.target.value)}
             className="w-full p-0 bg-transparent border-none resize-none focus:ring-0 focus:outline-none"
             rows={1}
           />
