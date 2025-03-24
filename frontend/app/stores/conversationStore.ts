@@ -156,13 +156,9 @@ export const useConversationStore = create<ConversationState>((set, get) => ({
       lastUserMessageIndex--
     }
     
-    // If there are assistant messages after the last user message, remove them
+    // We'll send all messages for API context, but we won't modify the existing messages
+    // This preserves any edited assistant messages in the UI
     let messagesToSend = [...messages]
-    if (lastUserMessageIndex >= 0 && lastUserMessageIndex < messages.length - 1) {
-      // Get all messages up to and including the last user message
-      messagesToSend = messages.slice(0, lastUserMessageIndex + 1)
-      set({ messages: messagesToSend })
-    }
     
     // Create an assistant message to stream into
     const assistantMessageId = nanoid()
@@ -250,6 +246,7 @@ export const useConversationStore = create<ConversationState>((set, get) => ({
     if (targetIndex === -1 || messages[targetIndex].role !== 'assistant') return
     
     // Get all messages before the target to use as context
+    // This ensures we only use messages that came before this assistant message
     const contextMessages = messages.slice(0, targetIndex)
     
     // Set the target message content to empty during regeneration
