@@ -35,6 +35,7 @@ interface ConversationState {
   // System prompt
   setSystemPrompt: (prompt: string | null) => void
 
+
   // Export/Import
   exportState: () => string
   importState: (stateJson: string) => void
@@ -139,6 +140,7 @@ export const useConversationStore = create<ConversationState>((set, get) => ({
       if (state.systemPrompt === null || typeof state.systemPrompt === 'string') {
         set({ systemPrompt: state.systemPrompt })
       }
+      
     } catch (error) {
       console.error('Error importing state:', error)
     }
@@ -194,6 +196,7 @@ export const useConversationStore = create<ConversationState>((set, get) => ({
       }))
       
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+      
       const response = await fetch(`${API_URL}/completion/stream`, {
         method: 'POST',
         headers: {
@@ -279,6 +282,7 @@ export const useConversationStore = create<ConversationState>((set, get) => ({
       }))
       
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+      
       const response = await fetch(`${API_URL}/completion/stream`, {
         method: 'POST',
         headers: {

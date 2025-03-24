@@ -6,6 +6,7 @@ import Cell from './components/Cell'
 import InsertCell from './components/InsertCell'
 import SystemPromptCell from './components/SystemPromptCell'
 import Toolbar from './components/Toolbar'
+import APIControls from './components/APIControls'
 
 export default function NotebookInterface() {
   const store = useConversationStore()
@@ -80,6 +81,9 @@ export default function NotebookInterface() {
         isStreaming={store.isStreaming}
         hasMessages={store.messages.length > 0}
       />
+      
+      {/* API Parameters Controls - panel only */}
+      <APIControls />
       
       {/* Main notebook area */}
       <div className="flex-1">

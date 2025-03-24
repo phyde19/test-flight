@@ -13,6 +13,7 @@ router = APIRouter(
 
 @router.post("/stream")
 async def stream_response(request: CompletionRequest):
+    print(request)
     assistant = request.assistant
     system_prompt = request.system_prompt
     conversation = [msg.model_dump() for msg in request.conversation]

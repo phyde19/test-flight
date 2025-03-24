@@ -31,7 +31,8 @@ export default function Toolbar({
 }: ToolbarProps) {
   return (
     <div className="sticky top-0 z-10 bg-white border-b shadow-sm py-2 px-4">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between">        
+        <div className="flex flex-wrap items-center gap-2">
         {/* Assistant selector */}
         <div className="flex items-center mr-4">
           <span className="text-sm font-medium mr-2">Assistant:</span>
@@ -148,6 +149,22 @@ export default function Toolbar({
           color="purple"
         />
       </div>
+
+      {/* JSON API Parameters Button - right-aligned */}
+      <ToolbarButton
+        onClick={() => {}}
+        icon={
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2a4 4 0 0 0-4 4v14a4 4 0 0 0 8 0V6a4 4 0 0 0-4-4Z"/>
+            <path d="m6 12 12-6"/>
+            <path d="m6 18 12-6"/>
+          </svg>
+        }
+        label="JSON"
+        color="indigo"
+        id="jsonParamsButton"
+      />
+      </div>
     </div>
   )
 }
@@ -156,8 +173,9 @@ interface ToolbarButtonProps {
   onClick: () => void
   icon: React.ReactNode
   label: string
-  color: 'blue' | 'green' | 'red' | 'purple' | 'gray'
+  color: 'blue' | 'green' | 'red' | 'purple' | 'gray' | 'indigo'
   disabled?: boolean
+  id?: string
 }
 
 function ToolbarButton({
@@ -165,20 +183,23 @@ function ToolbarButton({
   icon,
   label,
   color,
-  disabled = false
+  disabled = false,
+  id
 }: ToolbarButtonProps) {
   const colorClasses = {
     blue: 'text-blue-600 hover:bg-blue-50',
     green: 'text-green-600 hover:bg-green-50',
     red: 'text-red-600 hover:bg-red-50',
     purple: 'text-purple-600 hover:bg-purple-50',
-    gray: 'text-gray-600 hover:bg-gray-50'
+    gray: 'text-gray-600 hover:bg-gray-50',
+    indigo: 'text-indigo-600 hover:bg-indigo-50'
   }
   
   return (
     <button
       onClick={onClick}
       disabled={disabled}
+      id={id}
       className={`py-1 px-2 text-xs rounded flex items-center gap-1 border border-gray-200 transition-colors ${colorClasses[color]} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
     >
       {icon}
