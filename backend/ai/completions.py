@@ -7,26 +7,32 @@ You are a helpful assistant.
 """
 
 def llm(conversation: list[MessageDict], system_message: str | None = None):
-    if system_message is None:
-        system_message = default_system
+    messages = list(conversation)  # Create a copy to avoid modifying the original
+    
+    # Only prepend system message if provided and there's no system message at the start
+    if system_message and (not messages or messages[0]['role'] != 'system'):
+        messages.insert(0, {"role": "system", "content": system_message})
+    elif not messages:  # Empty conversation, add default system message
+        messages.append({"role": "system", "content": default_system})
+    
     completion = openai.chat.completions.create(
         model="gpt-4o",
-        messages=[
-            {"role": "system", "content": system_message},
-            *conversation
-        ]
+        messages=messages
     )
     return completion.choices[0].message.content
 
 def llm_stream(conversation: list[MessageDict], system_message: str | None = None) -> Generator[str, None, None]:
-    if system_message is None:
-        system_message = default_system
+    messages = list(conversation)  # Create a copy to avoid modifying the original
+    
+    # Only prepend system message if provided and there's no system message at the start
+    if system_message and (not messages or messages[0]['role'] != 'system'):
+        messages.insert(0, {"role": "system", "content": system_message})
+    elif not messages:  # Empty conversation, add default system message
+        messages.append({"role": "system", "content": default_system})
+    
     stream = openai.chat.completions.create(
         model="gpt-4o",
-        messages=[
-            {"role": "system", "content": system_message},
-            *conversation
-        ],
+        messages=messages,
         stream=True
     )
     for chunk in stream:
