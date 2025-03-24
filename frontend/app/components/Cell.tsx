@@ -93,7 +93,6 @@ export default function Cell({
       className={`relative group transition-all duration-200 rounded-lg 
         ${roleStyles.border} ${roleStyles.bg} ${roleStyles.hover} 
         ${isEditing ? 'shadow-md ring-2 ring-blue-400 ring-opacity-50' : 'shadow-sm hover:shadow'}
-        ${isStreaming && isTarget ? 'animate-pulse' : ''}
         ${!isEditing ? 'cursor-pointer' : ''}
       `}
       onClick={(e) => {

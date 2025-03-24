@@ -13,6 +13,15 @@ const config: Config = {
         background: "var(--background)",
         foreground: "var(--foreground)",
       },
+      keyframes: {
+        caret: {
+          '0%, 100%': { opacity: '0' },
+          '50%': { opacity: '1' }
+        }
+      },
+      animation: {
+        caret: 'caret 1s ease-in-out infinite'
+      }
     },
   },
   plugins: [],
