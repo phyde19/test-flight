@@ -84,16 +84,17 @@ export default function NotebookInterface() {
       {/* Main notebook area */}
       <div className="flex-1">
         <div className="max-w-3xl mx-auto px-4 py-6">
-          {/* System prompt cell */}
-          <div className="mb-8">
-            <SystemPromptCell 
-              content={store.systemPrompt}
-              onChange={store.setSystemPrompt}
-            />
-          </div>
-          
-          {/* Message cells */}
-          <div className="space-y-2 relative pl-10">
+          {/* All cells container */}
+          <div className="space-y-6 relative">
+            {/* System prompt cell */}
+            <div className="mb-4 relative">
+              <SystemPromptCell 
+                content={store.systemPrompt}
+                onChange={store.setSystemPrompt}
+              />
+            </div>
+            
+            {/* Message cells */}
             {store.messages.length === 0 ? (
               <EmptyState />
             ) : (
@@ -131,7 +132,7 @@ export default function NotebookInterface() {
                 ))}
                 
                 {/* Add cell at the end */}
-                <div className="mt-4 flex space-x-2 justify-center">
+                <div className="mt-6 flex space-x-2 justify-center">
                   <button
                     onClick={() => store.addMessage('user', '')}
                     className="py-1.5 px-3 text-sm bg-blue-100 text-blue-800 hover:bg-blue-200 rounded-full flex items-center gap-1 shadow-sm"

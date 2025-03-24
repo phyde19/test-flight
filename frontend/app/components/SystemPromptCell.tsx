@@ -43,13 +43,38 @@ export default function SystemPromptCell({
   }
 
   return (
-    <div className="relative group transition-all duration-200 rounded-lg border-yellow-200 bg-yellow-50 hover:border-yellow-300 shadow-sm">
+    <div 
+      className={`relative group transition-all duration-200 rounded-lg border-yellow-200 bg-yellow-50 hover:border-yellow-300 
+        ${isEditing ? 'shadow-md ring-2 ring-blue-400 ring-opacity-50' : 'shadow-sm hover:shadow'}
+        ${!isEditing ? 'cursor-pointer' : ''}
+      `}
+      onClick={(e) => {
+        // Don't trigger edit if clicking on buttons or controls
+        if (
+          e.target instanceof Element && 
+          (e.target.closest('button') || e.target.closest('svg') || e.target.tagName === 'BUTTON' || isEditing)
+        ) {
+          return;
+        }
+        setIsEditing(true);
+      }}>
+      {/* Using the same space for control buttons as regular cells for consistent width */}
+      <div className="absolute -left-10 top-3 flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* This space is intentionally left empty to match Cell component layout */}
+      </div>
       <div className="p-4">
         {/* Header and controls */}
         <div className="flex justify-between items-center mb-2">
-          <span className="text-xs font-medium px-2 py-1 rounded bg-yellow-100 text-yellow-800">
-            system
-          </span>
+          <div className="flex items-center">
+            <span className="text-xs font-medium px-2 py-1 rounded bg-yellow-100 text-yellow-800">
+              system
+            </span>
+            {isEditing && (
+              <span className="ml-2 text-xs text-blue-500 font-medium px-2 py-0.5 bg-blue-50 rounded-full border border-blue-200">
+                Editing
+              </span>
+            )}
+          </div>
           
           <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
             {isEditing ? (
@@ -95,6 +120,13 @@ export default function SystemPromptCell({
             ref={textareaRef}
             value={value}
             onChange={(e) => setValue(e.target.value)}
+            onKeyDown={(e) => {
+              // Handle Shift+Enter to save
+              if (e.key === 'Enter' && e.shiftKey) {
+                e.preventDefault();
+                handleSave();
+              }
+            }}
             className="w-full p-0 bg-transparent border-none resize-none focus:ring-0 focus:outline-none"
             placeholder="Enter system instructions here..."
             rows={1}
